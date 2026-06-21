@@ -31,35 +31,14 @@ To maintain the highest tier of engineering discipline, all Acadify Solution pro
 
 ## 🏗️ System Architecture & Ingestion Pipeline
 
-```
-                    ┌─────────────────────────┐
-                    │  Document Ingestion API │
-                    └────────────┬────────────┘
-                                 │
-                                 ▼
-                     [ PII Masking Interceptor ]
-                                 │
-                                 ▼
-                    ┌─────────────────────────┐
-                    │   Hierarchical Parser   │  ◄── Parses H1-H6 structural markdown
-                    └────────────┬────────────┘
-                                 │
-                                 ▼
-                    ┌─────────────────────────┐
-                    │    Semantic Chunker     │  ◄── Sentence embeddings & token boundaries
-                    └────────────┬────────────┘
-                                 │
-                                 ▼
-                    ┌─────────────────────────┐
-                    │    Parallel Ingestion   │  ◄── Concurrency throttled upserts (asyncio)
-                    └────────────┬────────────┘
-                                 │
-         ┌───────────────────────┼──────────────────────┐
-         ▼                       ▼                      ▼
-   ┌───────────┐           ┌───────────┐         ┌──────────────┐
-   │ Qdrant DB │           │ Pinecone  │         │   pgvector   │
-   └───────────┘           └───────────┘         └──────────────┘
-```
+The document ingestion pipeline is structured to flow sequentially through the following stages:
+
+1. **Ingestion Endpoint**: Accepts document text or uploads from the client.
+2. **PII Masking Interceptor**: Redacts sensitive data, replacing personal details with secure tokens.
+3. **Hierarchical Parser**: Segments text by Markdown heading levels, maintaining relationships.
+4. **Semantic Chunker**: Partitions sections using a local cosine similarity algorithm to identify thematic shifts.
+5. **Parallel Ingestor**: Batches chunks and embeds them, utilizing semaphores to load vectors concurrently into the vector store.
+6. **Vector Database**: Connects to the active database (Qdrant, Pinecone, or pgvector) to index the chunks.
 
 ---
 

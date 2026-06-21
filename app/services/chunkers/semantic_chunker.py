@@ -5,11 +5,13 @@ from app.core.config import settings
 
 class SemanticChunker:
     """
-    Groups and splits parsed nodes into semantic, token-bounded chunks.
+    Partitions documents using cosine similarity thresholds between adjacent sentences.
+    Provides mathematically-grounded semantic boundary detection.
     """
-    def __init__(self, chunk_size: int = None, chunk_overlap: int = None):
+    def __init__(self, chunk_size: int = None, chunk_overlap: int = None, similarity_threshold: float = 0.25):
         self.chunk_size = chunk_size or settings.CHUNK_SIZE
         self.chunk_overlap = chunk_overlap or settings.CHUNK_OVERLAP
+        self.similarity_threshold = similarity_threshold
         try:
             self.tokenizer = tiktoken.get_encoding("cl100k_base")
         except Exception:
@@ -17,70 +19,91 @@ class SemanticChunker:
 
     def count_tokens(self, text: str) -> int:
         """
-        Counts tokens using tiktoken (or word-split approximation as fallback).
+        Counts tokens using tiktoken encoder, falling back to word length.
         """
         if self.tokenizer:
             return len(self.tokenizer.encode(text))
         return len(text.split())
 
+    def _get_bow(self, text: str) -> Dict[str, int]:
+        """
+        Extracts lowercase word counts for term-frequency similarity modeling.
+        """
+        words = re.findall(r'\w+', text.lower())
+        vector = {}
+        for w in words:
+            vector[w] = vector.get(w, 0) + 1
+        return vector
+
+    def _cosine_similarity(self, vec1: Dict[str, int], vec2: Dict[str, int]) -> float:
+        """
+        Calculates cosine similarity between bag-of-words representation vectors.
+        """
+        if not vec1 or not vec2:
+            return 0.0
+        intersection = set(vec1.keys()) & set(vec2.keys())
+        dot_product = sum(vec1[w] * vec2[w] for w in intersection)
+        
+        sum1 = sum(v ** 2 for v in vec1.values())
+        sum2 = sum(v ** 2 for v in vec2.values())
+        denominator = (sum1 * sum2) ** 0.5
+        
+        if not denominator:
+            return 0.0
+        return dot_product / denominator
+
     def chunk_node(self, node: Dict[str, Any]) -> List[Dict[str, Any]]:
         """
-        Splits a hierarchical node's text into chunks respecting semantic splits and token limits.
+        Splits a single node's text by detecting thematic shifts and token overflow.
         """
         text = node["text"]
-        # Basic sentence division regex
         sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', text) if s.strip()]
         if not sentences:
             return []
             
         chunks = []
-        current_chunk_sentences = []
-        current_chunk_tokens = 0
-        
-        # Heuristic semantic transitions favoring split boundaries
-        semantic_transitions = {
-            "however", "therefore", "furthermore", "consequently", 
-            "nevertheless", "finally", "meanwhile", "additionally", 
-            "specifically", "moreover", "in contrast"
-        }
+        current_sentences = []
+        current_tokens = 0
 
         for sentence in sentences:
             sentence_tokens = self.count_tokens(sentence)
             
-            # Detect starting transition words
-            words = sentence.split()
-            first_word = words[0].lower().strip(",.?!") if words else ""
-            is_transition = first_word in semantic_transitions
+            # Identify thematic gaps using cosine similarity between adjacent sentences
+            thematic_gap = False
+            if current_sentences:
+                prev_sentence = current_sentences[-1]
+                v1 = self._get_bow(prev_sentence)
+                v2 = self._get_bow(sentence)
+                similarity = self._cosine_similarity(v1, v2)
+                
+                # If similarity is low and current chunk is large enough, trigger split
+                if similarity < self.similarity_threshold and current_tokens > (self.chunk_size // 3):
+                    thematic_gap = True
             
-            # Conditions for splitting:
-            # 1. Hard overflow limit.
-            # 2. Semantic transition starting word (with reasonable current chunk length).
-            if (current_chunk_tokens + sentence_tokens > self.chunk_size) or \
-               (is_transition and current_chunk_tokens > (self.chunk_size // 2)):
+            if (current_tokens + sentence_tokens > self.chunk_size) or thematic_gap:
+                if current_sentences:
+                    chunks.append(" ".join(current_sentences))
                 
-                if current_chunk_sentences:
-                    chunks.append(" ".join(current_chunk_sentences))
-                
-                # Apply overlapping logic
+                # Apply sliding overlap
                 overlap_sentences = []
                 overlap_tokens = 0
-                for s in reversed(current_chunk_sentences):
+                for s in reversed(current_sentences):
                     s_tokens = self.count_tokens(s)
                     if overlap_tokens + s_tokens <= self.chunk_overlap:
                         overlap_sentences.insert(0, s)
                         overlap_tokens += s_tokens
                     else:
                         break
-                current_chunk_sentences = overlap_sentences
-                current_chunk_tokens = overlap_tokens
+                current_sentences = overlap_sentences
+                current_tokens = overlap_tokens
 
-            current_chunk_sentences.append(sentence)
-            current_chunk_tokens += sentence_tokens
+            current_sentences.append(sentence)
+            current_tokens += sentence_tokens
 
-        if current_chunk_sentences:
-            chunks.append(" ".join(current_chunk_sentences))
+        if current_sentences:
+            chunks.append(" ".join(current_sentences))
 
-        # Build final chunk list
+        # Build chunks with parents and token details
         chunked_nodes = []
         for idx, chunk_text in enumerate(chunks):
             chunked_nodes.append({
