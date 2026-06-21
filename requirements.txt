@@ -1,0 +1,23 @@
+fastapi>=0.110.0
+uvicorn>=0.28.0
+pydantic>=2.6.4
+pydantic-settings>=2.2.1
+sqlalchemy[asyncio]>=2.0.28
+pgvector>=0.2.5
+asyncpg>=0.29.0
+pinecone>=6.0.0
+qdrant-client>=1.8.0
+langchain>=0.1.12
+langchain-core>=0.1.32
+langchain-community>=0.0.28
+langchain-anthropic>=0.1.4
+tiktoken>=0.6.0
+numpy>=1.26.4
+python-multipart>=0.0.9
+
+# Dev Dependencies
+pytest>=8.1.1
+pytest-asyncio>=0.23.5
+httpx>=0.27.0
+ruff>=0.3.3
+black>=24.3.0

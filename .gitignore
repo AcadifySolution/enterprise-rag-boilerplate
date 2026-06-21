@@ -1,0 +1,24 @@
+# Virtual environment
+.venv/
+venv/
+ENV/
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Local configuration
+.env
+.env.local
+
+# Databases & local volume data
+pgdata/
+qdrantdata/
+
+# OS files
+.DS_Store
+Thumbs.db
