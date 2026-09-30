@@ -1,7 +1,7 @@
-# Build stage
+# Build dependencies in an isolated stage.
 FROM python:3.11-slim AS builder
 
-WORKDIR /app
+WORKDIR /build
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
@@ -11,20 +11,24 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir --user -r requirements.txt
 
-# Final run stage
+# Minimal runtime image.
 FROM python:3.11-slim AS runner
 
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --create-home --uid 10001 appuser
 
-COPY --from=builder /root/.local /root/.local
-COPY . /app
+COPY --from=builder /root/.local /home/appuser/.local
+COPY --chown=appuser:appuser . /app
 
-ENV PATH=/root/.local/bin:$PATH
+ENV PATH=/home/appuser/.local/bin:$PATH
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+USER appuser
 
 EXPOSE 8000
 
