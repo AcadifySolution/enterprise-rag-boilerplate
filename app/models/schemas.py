@@ -1,39 +1,52 @@
-from typing import List, Dict, Any, Optional
-from pydantic import BaseModel, Field
+from typing import Any
+
+from pydantic import BaseModel, Field, field_validator
+
 
 class IngestTextRequest(BaseModel):
-    text: str = Field(..., description="The document or text payload to ingest.", examples=["# System Standard\nOur service maintains 99.99% availability."])
-    source_name: str = Field(..., description="Identifier name of the document source.", examples=["standards.md"])
+    text: str = Field(..., min_length=1, max_length=2_000_000)
+    source_name: str = Field(..., min_length=1, max_length=512)
+
 
 class IngestResponse(BaseModel):
-    status: str = Field(..., description="Result state of ingestion (e.g. success, partial_success).")
-    processed_chunks: int = Field(..., description="The count of text sub-chunks successfully processed.")
+    status: str = Field(...)
+    processed_chunks: int = Field(..., ge=0)
+
 
 class QueryRequest(BaseModel):
-    query: str = Field(..., description="The query string to run through the RAG pipeline.")
-    top_k: int = Field(default=3, description="Limit of context matches to retrieve.")
-    filter_dict: Optional[Dict[str, Any]] = Field(default=None, description="Metadata key-value filters to narrow vector searches.")
+    query: str = Field(..., min_length=1, max_length=10_000)
+    top_k: int = Field(default=3, ge=1, le=20)
+    filter_dict: dict[str, Any] | None = Field(default=None)
+
+    @field_validator("query")
+    @classmethod
+    def normalize_query(cls, value: str) -> str:
+        return value.strip()
+
 
 class ContextChunkModel(BaseModel):
     id: str
     score: float
     text: str
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
+
 
 class CitationModel(BaseModel):
     sentence: str
-    source_chunk_id: Optional[str]
-    source_file: Optional[str]
+    source_chunk_id: str | None
+    source_file: str | None
     overlap_score: float
     is_grounded: bool
+
 
 class VerificationModel(BaseModel):
     groundedness_score: float
     is_hallucinated: bool
-    citations: List[CitationModel]
+    citations: list[CitationModel]
+
 
 class QueryResponse(BaseModel):
     query: str
     answer: str
-    contexts: List[ContextChunkModel]
+    contexts: list[ContextChunkModel]
     verification: VerificationModel
