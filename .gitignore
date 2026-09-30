@@ -1,24 +1,33 @@
-# Virtual environment
+# Python
 .venv/
 venv/
 ENV/
-
-# Python Cache
 __pycache__/
 *.py[cod]
-*$py.class
+*.pyo
+*.pyd
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
+.coverage
+htmlcov/
 
 # Local configuration
 .env
-.env.local
+.env.*
+!.env.example
 
-# Databases & local volume data
+# Databases and local volume data
 pgdata/
 qdrantdata/
 
-# OS files
+# Build / packaging
+dist/
+build/
+*.egg-info/
+
+# OS / IDE
 .DS_Store
 Thumbs.db
+.vscode/
+.idea/
