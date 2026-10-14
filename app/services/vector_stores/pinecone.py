@@ -1,14 +1,18 @@
 import asyncio
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
+
 from pinecone import Pinecone as PineconeClient
+
 from app.core.config import settings
-from app.services.vector_stores.base import BaseVectorStore
 from app.core.logging import logger
+from app.services.vector_stores.base import BaseVectorStore
+
 
 class PineconeVectorStore(BaseVectorStore):
     """
     Pinecone client wrapper implementing BaseVectorStore.
     """
+
     def __init__(self):
         # We allow initial initialization without error for test frameworks/mocks
         api_key = settings.PINECONE_API_KEY or "mock-api-key"
@@ -28,14 +32,14 @@ class PineconeVectorStore(BaseVectorStore):
         ids: List[str],
         vectors: List[List[float]],
         metadatas: List[Dict[str, Any]],
-        texts: List[str]
+        texts: List[str],
     ) -> bool:
         try:
             records = []
             for idx, vec, meta, txt in zip(ids, vectors, metadatas, texts):
                 pinecone_meta = {**meta, "text": txt}
                 records.append((idx, vec, pinecone_meta))
-            
+
             # Execute upsert in executor thread
             await asyncio.to_thread(self.index.upsert, vectors=records)
             return True
@@ -44,10 +48,7 @@ class PineconeVectorStore(BaseVectorStore):
             return False
 
     async def query(
-        self,
-        vector: List[float],
-        top_k: int = 5,
-        filter_dict: Optional[Dict[str, Any]] = None
+        self, vector: List[float], top_k: int = 5, filter_dict: Optional[Dict[str, Any]] = None
     ) -> List[Dict[str, Any]]:
         try:
             # Query in thread
@@ -56,19 +57,16 @@ class PineconeVectorStore(BaseVectorStore):
                 vector=vector,
                 top_k=top_k,
                 include_metadata=True,
-                filter=filter_dict
+                filter=filter_dict,
             )
-            
+
             results = []
             for match in res.matches:
                 meta = match.metadata or {}
                 text = meta.pop("text", "")
-                results.append({
-                    "id": match.id,
-                    "score": match.score,
-                    "text": text,
-                    "metadata": meta
-                })
+                results.append(
+                    {"id": match.id, "score": match.score, "text": text, "metadata": meta}
+                )
             return results
         except Exception as e:
             logger.error(f"Pinecone query failed: {str(e)}")

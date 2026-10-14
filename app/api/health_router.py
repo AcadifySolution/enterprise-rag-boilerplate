@@ -1,8 +1,10 @@
 from fastapi import APIRouter
-from app.services.vector_stores.factory import get_vector_store
+
 from app.core.config import settings
+from app.services.vector_stores.factory import get_vector_store
 
 router = APIRouter(prefix="/health", tags=["health"])
+
 
 @router.get("")
 async def health_check():
@@ -20,5 +22,5 @@ async def health_check():
         "vector_db_type": settings.VECTOR_DB_TYPE,
         "vector_db_connected": db_connected,
         "app_name": settings.APP_NAME,
-        "environment": settings.APP_ENV
+        "environment": settings.APP_ENV,
     }

@@ -30,15 +30,15 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title=settings.APP_NAME,
-    description="Enterprise reference RAG backend with configurable retrieval and vector-store adapters.",
+    description=(
+        "Enterprise reference RAG backend with configurable retrieval " "and vector-store adapters."
+    ),
     version="0.1.0",
     lifespan=lifespan,
 )
 
 allowed_origins = [
-    origin.strip()
-    for origin in settings.CORS_ALLOWED_ORIGINS.split(",")
-    if origin.strip()
+    origin.strip() for origin in settings.CORS_ALLOWED_ORIGINS.split(",") if origin.strip()
 ]
 
 app.add_middleware(

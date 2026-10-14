@@ -1,14 +1,20 @@
 import re
+from typing import Any, Dict, List
+
 import tiktoken
-from typing import List, Dict, Any
+
 from app.core.config import settings
+
 
 class SemanticChunker:
     """
     Partitions documents using cosine similarity thresholds between adjacent sentences.
     Provides mathematically-grounded semantic boundary detection.
     """
-    def __init__(self, chunk_size: int = None, chunk_overlap: int = None, similarity_threshold: float = 0.25):
+
+    def __init__(
+        self, chunk_size: int = None, chunk_overlap: int = None, similarity_threshold: float = 0.25
+    ):
         self.chunk_size = chunk_size or settings.CHUNK_SIZE
         self.chunk_overlap = chunk_overlap or settings.CHUNK_OVERLAP
         self.similarity_threshold = similarity_threshold
@@ -29,7 +35,7 @@ class SemanticChunker:
         """
         Extracts lowercase word counts for term-frequency similarity modeling.
         """
-        words = re.findall(r'\w+', text.lower())
+        words = re.findall(r"\w+", text.lower())
         vector = {}
         for w in words:
             vector[w] = vector.get(w, 0) + 1
@@ -43,11 +49,11 @@ class SemanticChunker:
             return 0.0
         intersection = set(vec1.keys()) & set(vec2.keys())
         dot_product = sum(vec1[w] * vec2[w] for w in intersection)
-        
-        sum1 = sum(v ** 2 for v in vec1.values())
-        sum2 = sum(v ** 2 for v in vec2.values())
+
+        sum1 = sum(v**2 for v in vec1.values())
+        sum2 = sum(v**2 for v in vec2.values())
         denominator = (sum1 * sum2) ** 0.5
-        
+
         if not denominator:
             return 0.0
         return dot_product / denominator
@@ -57,17 +63,17 @@ class SemanticChunker:
         Splits a single node's text by detecting thematic shifts and token overflow.
         """
         text = node["text"]
-        sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+', text) if s.strip()]
+        sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", text) if s.strip()]
         if not sentences:
             return []
-            
+
         chunks = []
         current_sentences = []
         current_tokens = 0
 
         for sentence in sentences:
             sentence_tokens = self.count_tokens(sentence)
-            
+
             # Identify thematic gaps using cosine similarity between adjacent sentences
             thematic_gap = False
             if current_sentences:
@@ -75,15 +81,17 @@ class SemanticChunker:
                 v1 = self._get_bow(prev_sentence)
                 v2 = self._get_bow(sentence)
                 similarity = self._cosine_similarity(v1, v2)
-                
+
                 # If similarity is low and current chunk is large enough, trigger split
-                if similarity < self.similarity_threshold and current_tokens > (self.chunk_size // 3):
+                if similarity < self.similarity_threshold and current_tokens > (
+                    self.chunk_size // 3
+                ):
                     thematic_gap = True
-            
+
             if (current_tokens + sentence_tokens > self.chunk_size) or thematic_gap:
                 if current_sentences:
                     chunks.append(" ".join(current_sentences))
-                
+
                 # Apply sliding overlap
                 overlap_sentences = []
                 overlap_tokens = 0
@@ -106,14 +114,16 @@ class SemanticChunker:
         # Build chunks with parents and token details
         chunked_nodes = []
         for idx, chunk_text in enumerate(chunks):
-            chunked_nodes.append({
-                "id": f"{node['id']}_chunk_{idx}",
-                "text": chunk_text,
-                "metadata": {
-                    **node["metadata"],
-                    "parent_chunk_id": node["id"],
-                    "chunk_index": idx,
-                    "token_count": self.count_tokens(chunk_text)
+            chunked_nodes.append(
+                {
+                    "id": f"{node['id']}_chunk_{idx}",
+                    "text": chunk_text,
+                    "metadata": {
+                        **node["metadata"],
+                        "parent_chunk_id": node["id"],
+                        "chunk_index": idx,
+                        "token_count": self.count_tokens(chunk_text),
+                    },
                 }
-            })
+            )
         return chunked_nodes
