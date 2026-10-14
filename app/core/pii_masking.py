@@ -1,15 +1,17 @@
 import re
+
 from app.core.config import settings
 from app.core.logging import logger
 
+
 class PIIMasker:
     # Compile regexes for PII patterns
-    EMAIL_REGEX = re.compile(r'\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b')
-    SSN_REGEX = re.compile(r'\b\d{3}-\d{2}-\d{4}\b')
-    PHONE_REGEX = re.compile(r'\b(?:\+?(\d{1,3}))?[-. (]*(\d{3})[-. )]*(\d{3})[-. ]*(\d{4})\b')
+    EMAIL_REGEX = re.compile(r"\b[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}\b")
+    SSN_REGEX = re.compile(r"\b\d{3}-\d{2}-\d{4}\b")
+    PHONE_REGEX = re.compile(r"(?<!\w)(?:\+?(\d{1,3}))?[-. (]*(\d{3})[-. )]*(\d{3})[-. ]*(\d{4})\b")
     # Matches common card splits (xxxx-xxxx-xxxx-xxxx or continuous)
-    CREDIT_CARD_REGEX = re.compile(r'\b(?:\d{4}[ -]?){3}\d{4}\b|\b\d{13,16}\b')
-    IPv4_REGEX = re.compile(r'\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b')
+    CREDIT_CARD_REGEX = re.compile(r"\b(?:\d{4}[ -]?){3}\d{4}\b|\b\d{13,16}\b")
+    IPv4_REGEX = re.compile(r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b")
 
     @classmethod
     def mask_text(cls, text: str) -> str:
@@ -28,5 +30,5 @@ class PIIMasker:
 
         if masked != text:
             logger.info("PII detected and redacted from text segment.")
-            
+
         return masked

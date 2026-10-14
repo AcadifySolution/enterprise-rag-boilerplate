@@ -1,18 +1,19 @@
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List, Optional
+
 
 class BaseVectorStore(ABC):
     """
     Abstract interface defining unified actions for supported vector databases.
     """
-    
+
     @abstractmethod
     async def upsert(
         self,
         ids: List[str],
         vectors: List[List[float]],
         metadatas: List[Dict[str, Any]],
-        texts: List[str]
+        texts: List[str],
     ) -> bool:
         """
         Asynchronously batch-upserts embeddings, source texts, and associated metadata.
@@ -21,10 +22,7 @@ class BaseVectorStore(ABC):
 
     @abstractmethod
     async def query(
-        self,
-        vector: List[float],
-        top_k: int = 5,
-        filter_dict: Optional[Dict[str, Any]] = None
+        self, vector: List[float], top_k: int = 5, filter_dict: Optional[Dict[str, Any]] = None
     ) -> List[Dict[str, Any]]:
         """
         Queries vector space. Returns formatted candidate results:
