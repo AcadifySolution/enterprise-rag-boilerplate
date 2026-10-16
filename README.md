@@ -1,4 +1,4 @@
-# Enterprise RAG Boilerplate
+# Enterprise RAG Boilerplate — FastAPI Retrieval-Augmented Generation
 
 > Production-oriented Retrieval-Augmented Generation (RAG) reference architecture with modular ingestion, PII masking, semantic chunking, multi-stage retrieval, configurable vector stores, and deterministic response verification.
 
@@ -9,21 +9,30 @@ Built by **Acadify Solution** as a reference implementation for teams building e
 [![RAG](https://img.shields.io/badge/RAG-enterprise-6B4EFF.svg)](RAG_EVALUATION.md)
 [![CodeQL](https://github.com/AcadifySolution/enterprise-rag-boilerplate/actions/workflows/codeql.yml/badge.svg)](https://github.com/AcadifySolution/enterprise-rag-boilerplate/actions/workflows/codeql.yml)
 
+## Choose a starting point
+
+Use this backend to explore document ingestion, metadata-filtered retrieval,
+and vector-store adapters before integrating a RAG application.
+
+- Inspect [application source](app/) and [retrieval tests](tests/) to understand filtering and access boundaries.
+- Review [.env.example](.env.example) before configuring external vector stores or model providers.
+- Pair retrieval experiments with [AI Evals Framework](https://github.com/AcadifySolution/ai-evals-framework) to evaluate answers against a versioned dataset.
+
 ## What this provides
 
-| Layer | Implementation |
-| --- | --- |
-| API | FastAPI ingestion, query, and health endpoints |
-| Protection | PII masking, production API-key enforcement, bounded inputs |
-| Parsing | Hierarchical Markdown parsing |
-| Chunking | Semantic chunking with configurable token limits |
-| Embeddings | Pluggable embedding service |
-| Retrieval | Multi-stage retrieval with metadata filtering |
-| Vector stores | pgvector, Qdrant, Pinecone adapters |
-| Generation | LangChain-compatible LLM integration |
-| Verification | Deterministic lexical/cosine groundedness baseline |
-| Operations | Structured logging, Docker, health checks, automated tests |
-| Evaluation | RAG evaluation baseline and regression guidance |
+| Layer         | Implementation                                              |
+| ------------- | ----------------------------------------------------------- |
+| API           | FastAPI ingestion, query, and health endpoints              |
+| Protection    | PII masking, production API-key enforcement, bounded inputs |
+| Parsing       | Hierarchical Markdown parsing                               |
+| Chunking      | Semantic chunking with configurable token limits            |
+| Embeddings    | Pluggable embedding service                                 |
+| Retrieval     | Multi-stage retrieval with metadata filtering               |
+| Vector stores | pgvector, Qdrant, Pinecone adapters                         |
+| Generation    | LangChain-compatible LLM integration                        |
+| Verification  | Deterministic lexical/cosine groundedness baseline          |
+| Operations    | Structured logging, Docker, health checks, automated tests  |
+| Evaluation    | RAG evaluation baseline and regression guidance             |
 
 ## Architecture
 
@@ -245,7 +254,7 @@ See:
 
 ## License
 
-See [LICENSE](LICENSE) if present in the repository. If no license file is present, the repository remains subject to the default rights provided by copyright law.
+See repository licensing terms (no standalone LICENSE file is included) if present in the repository. If no license file is present, the repository remains subject to the default rights provided by copyright law.
 
 ---
 
